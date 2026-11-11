@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>みんなの作品棚</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* 作品を「ラベルを貼った箱」として棚に並べる。目立たせるのは各カードの色ラベル（絵文字）だけで、ほかは静かに */
+:root {
+  --bg: #ECEFF4; --sheet: #FFFFFF; --ink: #17203A; --muted: #5A6377; --line: #D7DCE5; --sunken: #F4F6F9;
+  --accent: #2C55F0; --accent-ink: #FFFFFF; --accent-soft: #E3E9FF; --danger: #C8332B; --like: #E0336E;
+  --l0: #FF6F59; --l1: #FFB929; --l2: #25B8A6; --l3: #7C5CF6; --l4: #3A86FF; --l5: #F45FA6;
+  --label-ink: #17203A; --shadow: 0 1px 0 rgba(23,32,58,.06), 0 6px 18px rgba(23,32,58,.06);
+  --f-display: "Dela Gothic One", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151C; --sheet: #1B1F29; --ink: #E7EAF1; --muted: #A1A9BA; --line: #303747; --sunken: #232836;
+    --accent: #8EA6FF; --accent-ink: #10142A; --accent-soft: #252E52; --danger: #FF8A80; --like: #FF7BA6;
+    --l0: #E8604C; --l1: #E3A51F; --l2: #1FA090; --l3: #6E52E0; --l4: #3478E0; --l5: #D9548F;
+    --shadow: 0 1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151C; --sheet: #1B1F29; --ink: #E7EAF1; --muted: #A1A9BA; --line: #303747; --sunken: #232836;
+  --accent: #8EA6FF; --accent-ink: #10142A; --accent-soft: #252E52; --danger: #FF8A80; --like: #FF7BA6;
+  --l0: #E8604C; --l1: #E3A51F; --l2: #1FA090; --l3: #6E52E0; --l4: #3478E0; --l5: #D9548F;
+  --shadow: 0 1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.65; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { padding-block: 22px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.logo { font-family: var(--f-display); font-size: 26px; line-height: 1.2; margin: 0; letter-spacing: .02em; }
+.logo small { display: block; font-family: var(--f-body); font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: .04em; margin-top: 2px; }
+.me { margin-left: auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.me .who { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 12em; }
+
+.btn { border: 1px solid var(--line); background: var(--sheet); border-radius: 10px; padding: 8px 14px; cursor: pointer; font-weight: 500; line-height: 1.3; }
+a.btn { text-decoration: none; color: inherit; display: inline-block; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.btn.small { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+.btn.danger { color: var(--danger); border-color: var(--danger); }
+.btn:disabled { opacity: .5; cursor: default; }
+.linkish { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; font-size: inherit; }
+
+.av { width: 26px; height: 26px; border-radius: 50%; flex: none; display: inline-grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--c, var(--l4)); overflow: hidden; border: 2px solid var(--sheet); }
+.av img { width: 100%; height: 100%; object-fit: cover; }
+.avs { display: flex; }
+.avs .av + .av { margin-left: -8px; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-block: 6px 14px; }
+.search { flex: 1 1 220px; min-width: 0; border: 1px solid var(--line); background: var(--sheet); border-radius: 10px; padding: 9px 12px; }
+.toolbar select { border: 1px solid var(--line); background: var(--sheet); border-radius: 10px; padding: 8px 10px; max-width: 100%; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 14px; }
+.tag { border: 1px solid var(--line); background: var(--sheet); border-radius: 999px; padding: 3px 11px; font-size: 13px; cursor: pointer; }
+.tag[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.count { font-size: 13px; color: var(--muted); padding-bottom: 10px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 16px; padding-bottom: 40px; }
+.card { background: var(--sheet); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow); min-width: 0; }
+.label { position: relative; background: var(--lc); aspect-ratio: 16 / 7; max-width: 100%; display: grid; place-items: center; font-size: 46px; line-height: 1; }
+.label .new { position: absolute; top: 10px; left: 10px; background: var(--sheet); color: var(--ink); font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px; letter-spacing: .05em; }
+.card .body { padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+.card h3 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 18px; line-height: 1.35; overflow-wrap: anywhere; }
+.card h3 a { color: inherit; text-decoration: none; }
+.card h3 a:hover { text-decoration: underline; }
+.card .url { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .desc { margin: 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.card .ctags { display: flex; flex-wrap: wrap; gap: 4px; }
+.card .ctags span { font-size: 12px; color: var(--muted); background: var(--sunken); border-radius: 6px; padding: 1px 7px; }
+.makers { display: flex; align-items: center; gap: 8px; font-size: 13px; min-width: 0; }
+.makers .names { min-width: 0; overflow-wrap: anywhere; }
+.card .foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding: 8px 12px 8px 16px; }
+.card .meta { font-size: 12px; color: var(--muted); flex: 1 1 8em; min-width: 0; }
+.like { border: 1px solid var(--line); background: var(--sheet); border-radius: 999px; padding: 3px 10px; cursor: pointer; font-size: 13px; display: inline-flex; gap: 4px; align-items: center; }
+.like[aria-pressed="true"] { color: var(--like); border-color: var(--like); }
+.empty { background: var(--sheet); border: 1px dashed var(--line); border-radius: 14px; padding: 28px 20px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
+
+.panel { background: var(--sheet); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 40px; }
+.panel h2 { font-family: var(--f-display); font-weight: 400; font-size: 18px; margin: 0 0 10px; }
+.mlist { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mlist li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mlist .nm { font-weight: 700; }
+.mlist .hint { flex: 1 1 auto; }
+.hint { font-size: 13px; color: var(--muted); }
+.invite { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.invite input { flex: 1 1 16em; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: 12px; background: var(--sunken); }
+
+.gate { max-width: 520px; margin: 40px auto; background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; padding: 26px 24px; display: flex; flex-direction: column; gap: 14px; }
+.gate h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0; }
+.gate p { margin: 0; }
+.msg { border-radius: 10px; padding: 10px 12px; font-size: 14px; background: var(--accent-soft); }
+.msg.err { background: color-mix(in srgb, var(--danger) 14%, var(--sheet)); color: var(--ink); }
+
+/* 追加・編集のダイアログ */
+.modal { position: fixed; inset: 0; background: rgba(10,14,28,.45); display: grid; place-items: center; z-index: 20; padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
+.sheet { background: var(--sheet); border-radius: 16px; width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.sheet h2 { font-family: var(--f-display); font-weight: 400; font-size: 20px; margin: 0; }
+.f { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--muted); font-weight: 500; min-width: 0; }
+.f input, .f textarea { border: 1px solid var(--line); background: var(--sheet); border-radius: 10px; padding: 9px 11px; color: var(--ink); font-size: 15px; min-width: 0; }
+.f textarea { min-height: 92px; resize: vertical; }
+.req::after { content: "（必須）"; color: var(--danger); font-weight: 400; }
+.preview { display: flex; gap: 12px; align-items: center; }
+.preview .label { width: 112px; aspect-ratio: 16 / 9; border-radius: 10px; font-size: 32px; flex: none; }
+.emojis { display: flex; flex-wrap: wrap; gap: 4px; }
+.emojis button { width: 38px; height: 38px; border-radius: 9px; border: 1px solid var(--line); background: var(--sheet); font-size: 20px; cursor: pointer; padding: 0; }
+.emojis button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.emojis input { width: 4.5em; border: 1px solid var(--line); border-radius: 9px; padding: 6px; text-align: center; background: var(--sheet); }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.sw { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--sheet); background: var(--c); box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0; }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.pick { border: 1px solid var(--line); background: var(--sheet); border-radius: 999px; padding: 3px 10px 3px 4px; display: inline-flex; gap: 6px; align-items: center; cursor: pointer; font-size: 13px; color: var(--ink); }
+.pick .av { width: 22px; height: 22px; font-size: 11px; border: 0; }
+.pick[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.actions .grow { flex: 1; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); border-radius: 10px; padding: 10px 16px; font-size: 14px; z-index: 30; max-width: calc(100vw - 32px); }
+.toast.err { background: var(--danger); color: #fff; }
+@media (max-width: 520px) {
+  .logo { font-size: 22px; }
+  .me .who { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) { .card { transition: transform .12s; } .card:hover { transform: translateY(-2px); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 class="logo">みんなの作品棚<small>友だちと作ったサイトやアプリを並べておく場所</small></h1>
+    <div class="me" id="me"></div>
+  </header>
+  <main id="main"></main>
+</div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" integrity="sha384-AQ3POAMqIhwS81FrUH95ekxqBZHeP5tG2JfEL3+7GuTtfRLWnrRh32UxwzM+//A9" crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" integrity="sha384-TnlRYaR4JYz/lpaGuaiU61PjNberSA4vjLjtF+oRC/IkohkJqnWxw5EmDSOt1vA1" crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" integrity="sha384-qn4Jh88HhJA8dplNQyGjOh9OGI4izVhrfj/qIFgaKcdgOE06pXqIKGlsCILZcLAC" crossorigin="anonymous"></script>
+<script src="firebase-config.js"></script>
+<script>
+"use strict";
+const EMOJIS = ["🌐", "📱", "🛠️", "🎮", "🎨", "📚", "🍳", "🎵", "📸", "🗓️", "💪", "🛍️", "🚀", "🤖", "📝", "🎉"];
+const NEW_DAYS = 7;
+
+const S = {
+  state: "loading", // loading | setup | out | notmember | ready
+  gateErr: "", user: null, admin: false, me: null,
+  members: {}, items: [], invite: "",
+  q: "", tag: "", who: "", sort: "new",
+  edit: null, confirmDel: "", toast: null, nameEdit: null,
+};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const safeUrl = u => /^https?:\/\/[^\s]+$/i.test(String(u || "")) ? String(u) : "";
+const shortUrl = u => u.replace(/^https?:\/\//, "").replace(/\/$/, "");
+const fmtDate = t => { const d = new Date(t); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
+const pref = { get(k, d) { try { const v = localStorage.getItem("sd." + k); return v == null ? d : v; } catch { return d; } }, set(k, v) { try { localStorage.setItem("sd." + k, v); } catch {} } };
+S.sort = pref.get("sort", "new");
+
+let toastTimer = 0;
+function toast(text, err) { S.toast = { text, err }; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; renderToast(); }, 3200); renderToast(); }
+function renderToast() { document.getElementById("toast-root").innerHTML = S.toast ? `<div class="toast ${S.toast.err ? "err" : ""}" role="status">${esc(S.toast.text)}</div>` : ""; }
+function errText(e) {
+  if (e && e.code === "permission-denied") return "この操作をする権限がありません。メンバーから外されたか、ルールがまだ設定されていない可能性があります。";
+  if (e && e.code === "unavailable") return "通信できませんでした。電波のよいところでもう一度試してください。";
+  return "うまくいきませんでした。もう一度試してください。";
+}
+async function write(fn, ok) { try { await fn(); if (ok) toast(ok); return true; } catch (e) { console.error(e); toast(errText(e), true); return false; } }
+
+/* メンバー */
+const memberName = uid => (S.members[uid] && S.members[uid].name) || "（退会した人）";
+const hueOf = uid => { let h = 0; for (const c of String(uid)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % 6; };
+function avatar(uid) {
+  const m = S.members[uid] || {}, ph = safeUrl(m.photo);
+  return `<span class="av" style="--c:var(--l${hueOf(uid)})" title="${esc(memberName(uid))}">${ph ? `<img src="${esc(ph)}" alt="" referrerpolicy="no-referrer">` : esc((memberName(uid) || "?").slice(0, 1))}</span>`;
+}
+const memberIds = () => Object.keys(S.members).sort((a, b) => (S.members[a].joinedAt || 0) - (S.members[b].joinedAt || 0));
+
+/* 表示 */
+function render() {
+  renderMe();
+  const main = document.getElementById("main");
+  if (S.state === "loading") main.innerHTML = `<p class="hint">読み込んでいます…</p>`;
+  else if (S.state !== "ready") main.innerHTML = renderGate();
+  else main.innerHTML = renderShelf() + renderMembers();
+  renderModal();
+}
+function renderMe() {
+  const el = document.getElementById("me");
+  if (!S.user) { el.innerHTML = ""; return; }
+  const ids = S.state === "ready" ? memberIds() : [];
+  el.innerHTML = (ids.length ? `<span class="avs" aria-label="メンバー ${ids.length}人">${ids.slice(0, 6).map(avatar).join("")}</span>` : "")
+    + `<span class="who">${esc(S.me ? S.me.name : (S.user.displayName || S.user.email || ""))}</span><button class="btn small" data-act="logout">ログアウト</button>`;
+}
+function renderGate() {
+  if (S.state === "setup") return `<section class="gate"><h2>準備中です</h2><p class="hint">Firebase の設定（firebase-config.js）がまだ入っていません。</p></section>`;
+  const inv = readInvite();
+  let h = `<section class="gate"><h2>${inv ? "作品棚に招待されています" : "みんなの作品棚"}</h2>`;
+  if (S.gateErr) h += `<div class="msg err" role="alert">${esc(S.gateErr)}</div>`;
+  if (S.state === "out") {
+    h += inv ? `<p>自分の Google アカウントでログインすると参加できます。参加すると、みんなが作ったサイトを見たり、追加・編集したりできます。</p>`
+      : `<p>友だちどうしで作ったサイトやアプリを並べておく、招待制のページです。メンバーの人は Google でログインしてください。</p>`;
+    h += `<div><button class="btn primary" data-act="login">Google でログイン</button></div>`;
+  } else {
+    h += `<p>${esc(S.user.email || "")} はまだメンバーではありません。</p><p class="hint">参加するには、メンバーから<b>招待リンク</b>をもらって開いてください。別のアカウントで入るときは、右上の「ログアウト」から入り直します。</p>`;
+  }
+  return h + `</section>`;
+}
+
+function isNew(it) { return Date.now() - (it.createdAt || 0) < NEW_DAYS * 864e5 && it.ownerUid !== S.user.uid; }
+function filtered() {
+  const q = S.q.trim().toLowerCase();
+  let list = S.items.filter(it => {
+    if (S.tag && !(it.tags || []).includes(S.tag)) return false;
+    if (S.who && !(it.makers || []).includes(S.who) && it.ownerUid !== S.who) return false;
+    if (!q) return true;
+    const hay = [it.title, it.desc, it.url, ...(it.tags || []), ...(it.makers || []).map(memberName)].join(" ").toLowerCase();
+    return q.split(/\s+/).every(w => hay.includes(w));
+  });
+  const by = { new: (a, b) => (b.createdAt || 0) - (a.createdAt || 0), upd: (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0), like: (a, b) => (b.likes || []).length - (a.likes || []).length || (b.createdAt || 0) - (a.createdAt || 0), name: (a, b) => String(a.title).localeCompare(String(b.title), "ja") }[S.sort] || (() => 0);
+  return list.sort(by);
+}
+function allTags() { const c = {}; for (const it of S.items) for (const t of it.tags || []) c[t] = (c[t] || 0) + 1; return Object.keys(c).sort((a, b) => c[b] - c[a] || a.localeCompare(b, "ja")); }
+
+function renderShelf() {
+  const tags = allTags(), list = filtered();
+  let h = `<div class="toolbar">
+    <input class="search" id="q" type="search" placeholder="作品名・説明・タグ・作った人で探す" value="${esc(S.q)}" data-bind="q" aria-label="探す">
+    <select id="who" data-bind="who" aria-label="作った人で絞る"><option value="">作った人：全員</option>${memberIds().map(id => `<option value="${esc(id)}" ${S.who === id ? "selected" : ""}>${esc(memberName(id))}</option>`).join("")}</select>
+    <select id="sort" data-bind="sort" aria-label="並べ方">${[["new", "新しく追加した順"], ["upd", "最近直した順"], ["like", "いいねが多い順"], ["name", "名前順"]].map(([k, l]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${l}</option>`).join("")}</select>
+    <button class="btn primary" data-act="add">＋ 作品を追加</button>
+  </div>`;
+  if (tags.length) h += `<div class="tags" role="group" aria-label="タグで絞る"><button class="tag" data-act="tag" data-v="" aria-pressed="${!S.tag}">すべて</button>${tags.map(t => `<button class="tag" data-act="tag" data-v="${esc(t)}" aria-pressed="${S.tag === t}">#${esc(t)}</button>`).join("")}</div>`;
+  if (S.items.length) h += `<div class="count">${list.length === S.items.length ? `${S.items.length}件の作品` : `${S.items.length}件中 ${list.length}件`}</div>`;
+  h += `<div class="grid">`;
+  if (!S.items.length) h += `<div class="empty"><p style="margin:0 0 10px">まだ作品がありません。最初のひとつを並べましょう。</p><button class="btn primary" data-act="add">＋ 作品を追加</button></div>`;
+  else if (!list.length) h += `<div class="empty">条件に合う作品はありません。<button class="linkish" data-act="clear">絞り込みを外す</button></div>`;
+  h += list.map(card).join("") + `</div>`;
+  return h;
+}
+function card(it) {
+  const url = safeUrl(it.url), liked = (it.likes || []).includes(S.user.uid), n = (it.likes || []).length;
+  const makers = (it.makers && it.makers.length ? it.makers : [it.ownerUid]);
+  const upd = it.updatedBy && it.updatedAt && it.updatedAt - (it.createdAt || 0) > 60000 ? `${esc(memberName(it.updatedBy))}さんが ${fmtDate(it.updatedAt)} に直しました` : `${esc(memberName(it.ownerUid))}さんが ${fmtDate(it.createdAt || Date.now())} に追加`;
+  return `<article class="card">
+    <div class="label" style="--lc:var(--l${Number(it.color) % 6 || 0})" aria-hidden="true">${esc(it.emoji || "🌐")}${isNew(it) ? `<span class="new">NEW</span>` : ""}</div>
+    <div class="body">
+      <h3>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(it.title)}</a>` : esc(it.title)}</h3>
+      ${url ? `<div class="url">${esc(shortUrl(url))}</div>` : ""}
+      ${it.desc ? `<p class="desc">${esc(it.desc)}</p>` : ""}
+      ${(it.tags || []).length ? `<div class="ctags">${it.tags.map(t => `<span>#${esc(t)}</span>`).join("")}</div>` : ""}
+      <div class="makers"><span class="avs">${makers.map(avatar).join("")}</span><span class="names">${makers.map(id => esc(memberName(id))).join("・")}</span></div>
+    </div>
+    <div class="foot">
+      <span class="meta">${upd}</span>
+      <button class="like" data-act="like" data-id="${esc(it.id)}" aria-pressed="${liked}" aria-label="いいね ${n}件">${liked ? "♥" : "♡"} ${n}</button>
+      ${url ? `<a class="btn small" href="${esc(url)}" target="_blank" rel="noopener noreferrer">開く</a>` : ""}
+      <button class="btn small" data-act="edit" data-id="${esc(it.id)}">編集</button>
+    </div>
+  </article>`;
+}
+
+function renderMembers() {
+  const ids = memberIds();
+  let h = `<section class="panel" id="members"><h2>メンバー（${ids.length}人）</h2><ul class="mlist">`;
+  h += ids.map(id => {
+    const mine = id === S.user.uid, cnt = S.items.filter(it => (it.makers || [it.ownerUid]).includes(id)).length;
+    let ctl = "";
+    if (mine) ctl = S.nameEdit != null
+      ? `<input id="name-input" data-bind="nameEdit" value="${esc(S.nameEdit)}" maxlength="20" aria-label="表示する名前" style="border:1px solid var(--line);border-radius:8px;padding:4px 8px;min-width:0;width:10em;background:var(--sheet)"><button class="btn small primary" data-act="nameSave">保存</button><button class="btn small" data-act="nameCancel">やめる</button>`
+      : `<button class="btn small" data-act="nameEdit">名前を変える</button>`;
+    else if (S.admin) ctl = S.confirmDel === "m:" + id
+      ? `<button class="btn small danger" data-act="kick" data-id="${esc(id)}">外す</button><button class="btn small" data-act="cancelDel">やめる</button>`
+      : `<button class="btn small" data-act="askDel" data-id="m:${esc(id)}">メンバーから外す</button>`;
+    return `<li>${avatar(id)}<span class="nm">${esc(memberName(id))}${mine ? "（あなた）" : ""}</span><span class="hint">作品 ${cnt}件</span>${ctl}</li>`;
+  }).join("");
+  h += `</ul>`;
+  if (S.admin) {
+    h += `<h2 style="margin-top:18px">友だちを招待する</h2><p class="hint" style="margin:0 0 8px">招待リンクを送ると、相手は自分の Google アカウントでログインして参加できます。参加した人は、全部の作品を見たり、追加・編集したりできます。作品を消せるのは、追加した本人とあなただけです。</p>`;
+    h += S.invite
+      ? `<div class="invite"><input id="inv" readonly value="${esc(inviteUrl())}" aria-label="招待リンク"><button class="btn small primary" data-act="copyInv">コピー</button><button class="btn small" data-act="makeInv">作り直す</button>${S.confirmDel === "inv" ? `<button class="btn small danger" data-act="stopInv">止める</button><button class="btn small" data-act="cancelDel">やめる</button>` : `<button class="btn small" data-act="askDel" data-id="inv">止める</button>`}</div><p class="hint" style="margin:6px 0 0">作り直すか止めると、前のリンクでは新しく参加できなくなります（もう参加した人はそのままです）。</p>`
+      : `<button class="btn small primary" data-act="makeInv">招待リンクを作る</button>`;
+  } else h += `<p class="hint" style="margin:0">友だちを増やしたいときは、${esc(memberName(Object.keys(S.members).find(id => S.members[id].admin) || ""))}さん（管理者）に招待リンクをもらってください。</p>`;
+  return h + `</section>`;
+}
+
+/* 追加・編集 */
+function openEdit(it) {
+  S.edit = it
+    ? { id: it.id, title: it.title || "", url: it.url || "", desc: it.desc || "", tags: (it.tags || []).join(" "), emoji: it.emoji || "🌐", color: Number(it.color) || 0, makers: [...(it.makers && it.makers.length ? it.makers : [it.ownerUid])], ownerUid: it.ownerUid, err: "" }
+    : { id: "", title: "", url: "", desc: "", tags: S.tag || "", emoji: "🌐", color: S.items.length % 6, makers: [S.user.uid], ownerUid: S.user.uid, err: "" };
+  S.confirmDel = "";
+  render();
+  setTimeout(() => { const el = document.getElementById("e-title"); if (el) el.focus(); }, 0);
+}
+function renderModal() {
+  const root = document.getElementById("modal-root"), e = S.edit;
+  if (!e) { root.innerHTML = ""; return; }
+  const keep = document.activeElement && root.contains(document.activeElement) ? document.activeElement.id : "";
+  const canDel = e.id && (e.ownerUid === S.user.uid || S.admin);
+  root.innerHTML = `<div class="modal" data-act="closeBg"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="e-head">
+    <h2 id="e-head">${e.id ? "作品を編集" : "作品を追加"}</h2>
+    ${e.err ? `<div class="msg err" role="alert">${esc(e.err)}</div>` : ""}
+    <div class="preview"><div class="label" style="--lc:var(--l${e.color})" aria-hidden="true">${esc(e.emoji || "🌐")}</div><span class="hint">カードの見た目です。絵文字と色を選べます。</span></div>
+    <label class="f"><span class="req">作品の名前</span><input id="e-title" data-bind="edit.title" value="${esc(e.title)}" maxlength="60" placeholder="例: シフトボード"></label>
+    <label class="f">URL<input id="e-url" data-bind="edit.url" value="${esc(e.url)}" maxlength="500" inputmode="url" placeholder="https://..."></label>
+    <label class="f">説明<textarea id="e-desc" data-bind="edit.desc" maxlength="600" placeholder="どんなものか、使い方、こだわったところなど">${esc(e.desc)}</textarea></label>
+    <label class="f">タグ（スペースで区切る）<input id="e-tags" data-bind="edit.tags" value="${esc(e.tags)}" maxlength="120" placeholder="例: アプリ 就活 ゲーム"></label>
+    ${allTags().length ? `<div class="picks" aria-label="今あるタグ">${allTags().slice(0, 12).map(t => `<button type="button" class="tag" data-act="addTag" data-v="${esc(t)}">＋${esc(t)}</button>`).join("")}</div>` : ""}
+    <div class="f">絵文字<div class="emojis">${EMOJIS.map(x => `<button type="button" data-act="emoji" data-v="${x}" aria-pressed="${e.emoji === x}" aria-label="${x}">${x}</button>`).join("")}<input id="e-emoji" data-bind="edit.emoji" value="${esc(EMOJIS.includes(e.emoji) ? "" : e.emoji)}" maxlength="4" placeholder="ほか" aria-label="ほかの絵文字"></div></div>
+    <div class="f">色<div class="swatches">${[0, 1, 2, 3, 4, 5].map(i => `<button type="button" class="sw" style="--c:var(--l${i})" data-act="color" data-v="${i}" aria-pressed="${e.color === i}" aria-label="色 ${i + 1}"></button>`).join("")}</div></div>
+    <div class="f">作った人（何人でも）<div class="picks">${memberIds().map(id => `<button type="button" class="pick" data-act="maker" data-v="${esc(id)}" aria-pressed="${e.makers.includes(id)}">${avatar(id)}${esc(memberName(id))}</button>`).join("")}</div></div>
+    <div class="actions">
+      ${canDel ? (S.confirmDel === "item" ? `<button class="btn small danger" data-act="delItem">本当に消す</button><button class="btn small" data-act="cancelDel">やめる</button>` : `<button class="btn small danger" data-act="askDel" data-id="item">消す</button>`) : ""}
+      <span class="grow"></span>
+      <button class="btn" data-act="closeEdit">やめる</button>
+      <button class="btn primary" data-act="saveEdit">${e.id ? "保存する" : "追加する"}</button>
+    </div>
+  </div></div>`;
+  if (keep) { const el = document.getElementById(keep); if (el) el.focus(); }
+}
+function parseTags(s) { return [...new Set(String(s || "").split(/[\s、,，#＃]+/).map(t => t.trim()).filter(Boolean))].slice(0, 8).map(t => t.slice(0, 20)); }
+
+/* 招待リンク: #invite=<合言葉> */
+const pageUrl = () => (window.HUB_CONFIG && window.HUB_CONFIG.publicUrl) || location.origin + location.pathname;
+const inviteUrl = () => `${pageUrl()}#invite=${S.invite}`;
+function readInvite() { const m = /^#invite=([A-Za-z0-9_-]{8,})$/.exec(location.hash || ""); if (m) { try { sessionStorage.setItem("sd.invite", m[1]); } catch {} return m[1]; } try { return sessionStorage.getItem("sd.invite") || ""; } catch { return ""; } }
+function clearInvite() { try { sessionStorage.removeItem("sd.invite"); } catch {} try { history.replaceState(null, "", location.pathname + location.search); } catch {} }
+function newToken() { const b = new Uint8Array(18); crypto.getRandomValues(b); return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function copyFrom(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const fb = () => { el.focus(); el.select(); toast("選択しました。Ctrl+C（スマホは長押し）でコピーしてください"); };
+  try { navigator.clipboard.writeText(el.value).then(() => toast("コピーしました。LINE などに貼って送ってください"), fb); } catch { fb(); }
+}
+
+/* 操作 */
+const A = {
+  async login() {
+    try { await S.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    catch (e) { if (e && e.code === "auth/popup-blocked") { try { await S.auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()); } catch {} } else if (e && !/popup-closed|cancelled-popup/.test(e.code || "")) toast(e.code === "auth/unauthorized-domain" ? "このページのアドレスが Firebase のログイン許可に入っていません。" : "ログインできませんでした。もう一度試してください。", true); }
+  },
+  async logout() { try { await S.auth.signOut(); } catch {} },
+  add() { openEdit(null); },
+  edit(t) { const it = S.items.find(x => x.id === t.dataset.id); if (it) openEdit(it); },
+  closeEdit() { S.edit = null; S.confirmDel = ""; },
+  closeBg(t, ev) { if (ev.target === t) { S.edit = null; S.confirmDel = ""; } else return true; },
+  emoji(t) { S.edit.emoji = t.dataset.v; },
+  color(t) { S.edit.color = Number(t.dataset.v); },
+  maker(t) { const id = t.dataset.v, m = S.edit.makers; S.edit.makers = m.includes(id) ? m.filter(x => x !== id) : [...m, id]; },
+  addTag(t) { const cur = parseTags(S.edit.tags); if (!cur.includes(t.dataset.v)) S.edit.tags = [...cur, t.dataset.v].join(" "); },
+  async saveEdit() {
+    const e = S.edit, title = e.title.trim(), url = e.url.trim();
+    if (!title) { e.err = "作品の名前を入れてください。"; return; }
+    if (url && !safeUrl(url)) { e.err = "URL は https:// か http:// で始まる形で入れてください。"; return; }
+    if (!e.makers.length) { e.err = "作った人を1人以上選んでください。"; return; }
+    const now = Date.now(), data = { title: title.slice(0, 60), url: url.slice(0, 500), desc: e.desc.trim().slice(0, 600), tags: parseTags(e.tags), emoji: [...(e.emoji || "🌐")].slice(0, 2).join("") || "🌐", color: e.color, makers: e.makers.slice(0, 12), updatedAt: now, updatedBy: S.user.uid };
+    const ok = e.id
+      ? await write(() => S.db.doc("hub_items/" + e.id).update(data), "保存しました")
+      : await write(() => S.db.collection("hub_items").add({ ...data, ownerUid: S.user.uid, createdAt: now, likes: [] }), "棚に並べました");
+    if (ok) S.edit = null;
+  },
+  async delItem() {
+    const id = S.edit.id; S.confirmDel = "";
+    if (await write(() => S.db.doc("hub_items/" + id).delete(), "作品を消しました")) S.edit = null;
+  },
+  async like(t) {
+    const it = S.items.find(x => x.id === t.dataset.id); if (!it) return;
+    const has = (it.likes || []).includes(S.user.uid), FV = firebase.firestore.FieldValue;
+    await write(() => S.db.doc("hub_items/" + it.id).update({ likes: has ? FV.arrayRemove(S.user.uid) : FV.arrayUnion(S.user.uid) }));
+  },
+  tag(t) { S.tag = t.dataset.v; },
+  clear() { S.q = ""; S.tag = ""; S.who = ""; },
+  askDel(t) { S.confirmDel = t.dataset.id; },
+  cancelDel() { S.confirmDel = ""; },
+  nameEdit() { S.nameEdit = S.me.name || ""; setTimeout(() => { const el = document.getElementById("name-input"); if (el) el.focus(); }, 0); },
+  nameCancel() { S.nameEdit = null; },
+  async nameSave() {
+    const name = String(S.nameEdit || "").trim().slice(0, 20);
+    if (!name) return toast("名前を入れてください。", true);
+    if (await write(() => S.db.doc("hub_members/" + S.user.uid).update({ name }), "名前を変えました")) S.nameEdit = null;
+  },
+  async kick(t) { const id = t.dataset.id; S.confirmDel = ""; await write(() => S.db.doc("hub_members/" + id).delete(), "メンバーから外しました"); },
+  copyInv() { copyFrom("inv"); return true; },
+  async makeInv() { const again = !!S.invite; await write(() => S.db.doc("hub_meta/invite").set({ token: newToken() }), again ? "招待リンクを作り直しました。前のリンクは使えません。" : "招待リンクを作りました。コピーして送ってください。"); },
+  async stopInv() { S.confirmDel = ""; await write(() => S.db.doc("hub_meta/invite").delete(), "招待リンクを止めました"); },
+};
+document.addEventListener("click", async ev => {
+  const t = ev.target.closest("[data-act]"); if (!t) return;
+  const fn = A[t.dataset.act]; if (!fn) return;
+  if (t.tagName === "A") return;
+  const r = await fn(t, ev);
+  if (r !== true) render();
+});
+document.addEventListener("input", ev => {
+  const t = ev.target, b = t.dataset && t.dataset.bind; if (!b) return;
+  if (b === "q") { S.q = t.value; const pos = t.selectionStart; render(); const el = document.getElementById("q"); el.focus(); try { el.setSelectionRange(pos, pos); } catch {} return; }
+  if (b === "who" || b === "sort") { S[b] = t.value; if (b === "sort") pref.set("sort", t.value); render(); return; }
+  if (b === "nameEdit") { S.nameEdit = t.value; return; }
+  if (b.startsWith("edit.")) { const k = b.slice(5); if (k === "emoji") { if (t.value.trim()) { S.edit.emoji = t.value.trim(); renderModal(); } } else S.edit[k] = t.value; }
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape" && S.edit) { S.edit = null; S.confirmDel = ""; render(); }
+  if (ev.key === "Enter" && ev.target.id === "name-input") A.nameSave().then(render);
+});
+window.addEventListener("hashchange", () => { if (readInvite() && S.state === "notmember") join(); });
+
+/* データ */
+let unsubs = [];
+function stopAll() { for (const u of unsubs) u(); unsubs = []; }
+function onErr(e) { console.error(e); if (e && e.code === "permission-denied") { S.state = "notmember"; S.gateErr = "メンバーから外れたため、見られなくなりました。"; stopAll(); } render(); }
+function startData() {
+  const db = S.db; stopAll(); S.state = "ready";
+  unsubs.push(db.collection("hub_members").onSnapshot(snap => {
+    const m = {}; for (const d of snap.docs) m[d.id] = d.data(); S.members = m; S.me = m[S.user.uid] || S.me;
+    if (!m[S.user.uid] && !S.admin) { onErr({ code: "permission-denied" }); return; }
+    render();
+  }, onErr));
+  unsubs.push(db.collection("hub_items").onSnapshot(snap => { S.items = snap.docs.map(d => ({ id: d.id, ...d.data() })); render(); }, onErr));
+  if (S.admin) unsubs.push(db.doc("hub_meta/invite").onSnapshot(snap => { S.invite = (snap.exists && snap.data().token) || ""; render(); }, onErr));
+  render();
+}
+async function join() {
+  const u = S.user, db = S.db, inv = readInvite();
+  S.state = "loading"; S.gateErr = ""; render();
+  let doc = null; try { doc = await db.doc("hub_members/" + u.uid).get(); } catch {}
+  if (doc && doc.exists) { S.me = doc.data(); clearInvite(); startData(); return; }
+  if (S.admin || inv) {
+    const data = { name: (u.displayName || (u.email || "").split("@")[0] || "メンバー").slice(0, 20), photo: safeUrl(u.photoURL) || "", joinedAt: Date.now(), token: S.admin ? "" : inv, admin: S.admin };
+    try { await db.doc("hub_members/" + u.uid).set(data); S.me = data; clearInvite(); if (!S.admin) toast("参加しました。ようこそ！"); startData(); return; }
+    catch (e) { console.error(e); clearInvite(); S.gateErr = S.admin ? "参加の記録を作れませんでした。Firebase のルールが新しくなっているか確かめてください。" : "この招待リンクは使えません。リンクが古いか、途中で切れている可能性があります。新しいリンクをもらってください。"; }
+  }
+  S.state = "notmember"; render();
+}
+
+(function boot() {
+  const cfg = window.HUB_CONFIG || {};
+  if (!window.firebase || !cfg.firebase || !cfg.firebase.apiKey) { S.state = "setup"; render(); return; }
+  // シフトボードとログインを分けるため、名前つきのアプリとして初期化する（同じサイト内でログイン状態が混ざらない）
+  const app = firebase.initializeApp(cfg.firebase, "sakuhin");
+  S.auth = app.auth(); S.db = app.firestore();
+  const admin = (cfg.adminEmail || "").toLowerCase();
+  readInvite();
+  S.auth.onAuthStateChanged(async u => {
+    stopAll(); S.user = null; S.me = null; S.admin = false; S.members = {}; S.items = []; S.edit = null;
+    if (!u || u.isAnonymous) { S.state = "out"; render(); return; }
+    S.user = u;
+    S.admin = !!admin && u.emailVerified && (u.email || "").toLowerCase() === admin && u.providerData.some(p => p && p.providerId === "google.com");
+    await join();
+  });
+})();
+</script>
+</body>
+</html>
